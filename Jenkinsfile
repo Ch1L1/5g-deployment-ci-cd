@@ -14,7 +14,7 @@ pipeline {
                     # Vytvorenie .env súboru ak neexistuje
                     echo "DOCKER_HOST_IP=${DOCKER_HOST_IP}" > .env
                     set -a
-                    source .env
+                    . ./.env
                 '''
             }
         }
