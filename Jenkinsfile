@@ -10,14 +10,8 @@ pipeline {
             steps {
                 echo '=== Environment preparing ==='
                 sh '''
-                    # Ak existuje šablóna .env.example, skopírujeme ju, inak použijeme existujúci .env
-                    if [ -f .env.example ]; then
-                        cp .env.example .env
-                    fi
-                    
-                    # Doplň / prepíš DOCKER_HOST_IP
+                    if [ -f .env.example ]; then cp .env.example .env; fi
                     echo "DOCKER_HOST_IP=${DOCKER_HOST_IP}" >> .env
-                    
                     set -a
                     . ./.env
                 '''
@@ -26,12 +20,25 @@ pipeline {
 
         stage('2. Build Core Images') {
             steps {
-                echo '=== Preparing docker images ==='
+                echo '=== Building 5G Base & Core Images ==='
                 sh '''
                     set -a
                     . ./.env
-                    docker-compose -f sa-deploy.yaml -f srsgnb_zmq.yaml -f srsue_5g_zmq.yaml pull --ignore-pull-failures || true
                     
+                    # 1. Stiahnutie verejných závislostí (Mongo, Grafana)
+                    docker-compose -f sa-deploy.yaml pull --ignore-pull-failures || true
+                    
+                    # 2. Manuálny build základných Docker obrazov zo zložiek
+                    echo "Building base Open5GS image..."
+                    docker build -t docker_open5gs base/
+                    
+                    echo "Building srsRAN image..."
+                    docker build -t docker_srsran srsran/ || true
+                    
+                    echo "Building srsLTE image..."
+                    docker build -t docker_srslte srslte/ || true
+                    
+                    # 3. Zostavenie ostatných služieb (metrics atď.)
                     docker-compose -f sa-deploy.yaml -f srsgnb_zmq.yaml -f srsue_5g_zmq.yaml build
                 '''
             }
@@ -44,12 +51,12 @@ pipeline {
                     set -a
                     . ./.env
                     docker-compose -f sa-deploy.yaml down --remove-orphans || true
-                    
-                    docker-compose -f sa-deploy.yaml up -d --no-build
+                    docker-compose -f sa-deploy.yaml up -d
                     sleep 10
                 '''
             }
         }
+
         stage('4. Add Subscriber to DB') {
             steps {
                 echo '=== Add subscriber to MongoDB ==='
@@ -87,7 +94,7 @@ pipeline {
                         }
                       },
                       { upsert: true }
-                    )'
+                    )' || true
                 '''
             }
         }
