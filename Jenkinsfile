@@ -2,16 +2,15 @@ pipeline {
     agent any
 
     environment {
-        // IP adresa tvojej VM
+        // IP address of VM
         DOCKER_HOST_IP = '192.168.50.200'
     }
 
     stages {
         stage('1. Prepare Environment') {
             steps {
-                echo '=== Nastavujem prostredie a premenné ==='
+                echo '=== Environment preparing ==='
                 sh '''
-                    # Vytvorenie .env súboru ak neexistuje
                     echo "DOCKER_HOST_IP=${DOCKER_HOST_IP}" > .env
                     set -a
                     . ./.env
@@ -21,18 +20,18 @@ pipeline {
 
         stage('2. Build Core Images') {
             steps {
-                echo '=== Stavia sa Docker obrazy (Open5GS, srsLTE, srsRAN) ==='
+                echo '=== Build docker images (Open5GS, srsLTE, srsRAN) ==='
                 sh '''
                     set -a
-		    . ./.env
-		    docker compose pull
+		    		. ./.env
+		    		docker compose pull
                 '''
             }
         }
 
         stage('3. Deploy 5G Core') {
             steps {
-                echo '=== Spúšťam Open5GS 5G Core ==='
+                echo '=== Deploy Open5GS 5G Core ==='
                 sh '''
                     docker compose -f sa-deploy.yaml up -d mongodb open5gs-db amf upf smf udr udm ausf nrf nssf pcf
                     sleep 10
@@ -42,9 +41,8 @@ pipeline {
 
         stage('4. Add Subscriber to DB') {
             steps {
-                echo '=== Automatické pridanie SIM karty do MongoDB ==='
+                echo '=== Add subscriber to MongoDB ==='
                 sh '''
-                    # Vloženie subscribera priamo cez mongo príkaz (namiesto WebUI)
                     docker exec mongodb mongosh open5gs --eval '
                     db.subscribers.updateOne(
                       { imsi: "001011234567895" },
@@ -85,7 +83,7 @@ pipeline {
 
         stage('5. Deploy RAN & UE') {
             steps {
-                echo '=== Spúšťam Rádio (gNB) a Mobil (UE) ==='
+                echo '=== Deploy gNB and UE ==='
                 sh '''
                     docker compose -f srsgnb_zmq.yaml up -d
                     sleep 5
@@ -97,9 +95,8 @@ pipeline {
 
         stage('6. Automated Testing (Ping)') {
             steps {
-                echo '=== Testujem prepojenie cez 5G sieť (PING) ==='
+                echo '=== 5G network (PING) ==='
                 sh '''
-                    # Overenie, či UE dostal IP a dokáže spraviť ping
                     docker exec srsue ping -c 5 10.45.0.1
                 '''
             }
@@ -108,14 +105,14 @@ pipeline {
 
     post {
         always {
-            echo '=== Upratovanie po teste ==='
-            // Tu môžeme v budúcnosti pridať docker compose down, ak budeme chcieť čistiť prostredie
+            echo '=== Cleanup ==='
+            // TODO
         }
         success {
-            echo '✅ 5G Pipeline prebehla ÚSPEŠNE! Mobil je pripojený a ping prešiel.'
+            echo '✅ 5G Pipeline successfull.'
         }
         failure {
-            echo '❌ 5G Pipeline ZLYHALA! Skontroluj logy kontajnerov.'
+            echo '❌ 5G Pipeline ERROR!'
         }
     }
 }
