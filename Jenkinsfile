@@ -26,15 +26,16 @@ pipeline {
 
         stage('2. Build Core Images') {
             steps {
-                echo '=== Pulling docker images ==='
+                echo '=== Preparing docker images ==='
                 sh '''
                     set -a
                     . ./.env
-                    docker-compose -f sa-deploy.yaml -f srsgnb_zmq.yaml -f srsue_5g_zmq.yaml pull
+                    docker-compose -f sa-deploy.yaml -f srsgnb_zmq.yaml -f srsue_5g_zmq.yaml pull --ignore-pull-failures || true
+                    
+                    docker-compose -f sa-deploy.yaml -f srsgnb_zmq.yaml -f srsue_5g_zmq.yaml build
                 '''
             }
         }
-
         stage('3. Deploy 5G Core') {
             steps {
                 echo '=== Deploy Open5GS 5G Core ==='
