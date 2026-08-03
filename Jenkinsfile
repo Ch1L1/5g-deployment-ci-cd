@@ -24,7 +24,7 @@ pipeline {
                 sh '''
                     set -a
                     . ./.env
-                    docker-compose pull
+                    docker-compose -f sa-deploy.yaml -f srsgnb_zmq.yaml -f srsue_5g_zmq.yaml pull
                 '''
             }
         }
