@@ -36,6 +36,7 @@ pipeline {
                 '''
             }
         }
+
         stage('3. Deploy 5G Core') {
             steps {
                 echo '=== Deploy Open5GS 5G Core ==='
@@ -44,12 +45,11 @@ pipeline {
                     . ./.env
                     docker-compose -f sa-deploy.yaml down --remove-orphans || true
                     
-                    docker-compose -f sa-deploy.yaml up -d
+                    docker-compose -f sa-deploy.yaml up -d --no-build
                     sleep 10
                 '''
             }
         }
-
         stage('4. Add Subscriber to DB') {
             steps {
                 echo '=== Add subscriber to MongoDB ==='
