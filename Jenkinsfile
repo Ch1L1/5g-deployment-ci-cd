@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // IP address of VM
         DOCKER_HOST_IP = '192.168.50.200'
     }
 
@@ -11,7 +10,14 @@ pipeline {
             steps {
                 echo '=== Environment preparing ==='
                 sh '''
-                    echo "DOCKER_HOST_IP=${DOCKER_HOST_IP}" > .env
+                    # Ak existuje šablóna .env.example, skopírujeme ju, inak použijeme existujúci .env
+                    if [ -f .env.example ]; then
+                        cp .env.example .env
+                    fi
+                    
+                    # Doplň / prepíš DOCKER_HOST_IP
+                    echo "DOCKER_HOST_IP=${DOCKER_HOST_IP}" >> .env
+                    
                     set -a
                     . ./.env
                 '''
