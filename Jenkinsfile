@@ -23,9 +23,9 @@ pipeline {
             steps {
                 echo '=== Stavia sa Docker obrazy (Open5GS, srsLTE, srsRAN) ==='
                 sh '''
-                    docker build -t docker_open5gs ./base
-                    docker build -t docker_srslte ./srslte
-                    docker build -t docker_srsran ./srsran
+                    set -a
+		    . ./.env
+		    docker compose pull
                 '''
             }
         }
