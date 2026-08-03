@@ -42,7 +42,7 @@ pipeline {
                 sh '''
                     set -a
                     . ./.env
-                    docker-compose -f sa-deploy.yaml up -d mongodb open5gs-db amf upf smf udr udm ausf nrf nssf pcf
+                    docker-compose -f sa-deploy.yaml up -d
                     sleep 10
                 '''
             }
