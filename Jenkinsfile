@@ -20,11 +20,11 @@ pipeline {
 
         stage('2. Build Core Images') {
             steps {
-                echo '=== Build docker images (Open5GS, srsLTE, srsRAN) ==='
+                echo '=== Pulling docker images ==='
                 sh '''
                     set -a
-		    		. ./.env
-		    		docker-compose pull
+                    . ./.env
+                    docker-compose pull
                 '''
             }
         }
@@ -33,7 +33,9 @@ pipeline {
             steps {
                 echo '=== Deploy Open5GS 5G Core ==='
                 sh '''
-                    docker compose -f sa-deploy.yaml up -d mongodb open5gs-db amf upf smf udr udm ausf nrf nssf pcf
+                    set -a
+                    . ./.env
+                    docker-compose -f sa-deploy.yaml up -d mongodb open5gs-db amf upf smf udr udm ausf nrf nssf pcf
                     sleep 10
                 '''
             }
@@ -85,9 +87,11 @@ pipeline {
             steps {
                 echo '=== Deploy gNB and UE ==='
                 sh '''
-                    docker compose -f srsgnb_zmq.yaml up -d
+                    set -a
+                    . ./.env
+                    docker-compose -f srsgnb_zmq.yaml up -d
                     sleep 5
-                    docker compose -f srsue_5g_zmq.yaml up -d
+                    docker-compose -f srsue_5g_zmq.yaml up -d
                     sleep 10
                 '''
             }
@@ -106,10 +110,16 @@ pipeline {
     post {
         always {
             echo '=== Cleanup ==='
-            // TODO
+            sh '''
+                set -a
+                . ./.env
+                docker-compose -f srsue_5g_zmq.yaml down -v || true
+                docker-compose -f srsgnb_zmq.yaml down -v || true
+                docker-compose -f sa-deploy.yaml down -v || true
+            '''
         }
         success {
-            echo '✅ 5G Pipeline successfull.'
+            echo '✅ 5G Pipeline successful.'
         }
         failure {
             echo '❌ 5G Pipeline ERROR!'
