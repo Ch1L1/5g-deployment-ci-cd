@@ -24,7 +24,7 @@ pipeline {
                 sh '''
                     set -a
 		    		. ./.env
-		    		docker compose pull
+		    		docker-compose pull
                 '''
             }
         }
